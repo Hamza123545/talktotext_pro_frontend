@@ -101,12 +101,24 @@ async function sendFromDriveLink() {
 }
 
 async function callGemini(promptText) {
+    const langSelect = document.getElementById('languageSelect');
+    const targetCode = (langSelect && langSelect.value) ? langSelect.value : 'en';
+    const codeToName = {
+        en: 'English',
+        es: 'Spanish',
+        fr: 'French',
+        de: 'German',
+        hi: 'Hindi',
+        ur: 'Urdu',
+        zh: 'Chinese (Simplified)'
+    };
+    const targetLanguage = codeToName[targetCode] || 'English';
+
     const prompt = `
-    You are an expert AI assistant specialized in analyzing meeting recordings, audio discussions, and video content. 
-Your job is to take an audio/video transcript and provide a structured, clear, and professional response in ENGLISH ONLY. 
-Do NOT use any other language. 
-Always keep formatting consistent with headings and bullet points. 
-Follow the structure below very strictly:
+You are an expert AI assistant specialized in analyzing meeting recordings, audio discussions, and video content.
+Your job is to take an audio/video transcript and provide a structured, clear, and professional response in ${targetLanguage}.
+Always keep formatting consistent with headings and bullet points.
+Follow the structure below very strictly, translating the section headings into ${targetLanguage} as well:
 
 ====================================================================
 1. Abstract Summary
@@ -119,18 +131,16 @@ Follow the structure below very strictly:
    - Present them in clear bullet points.
    - Each point should be precise, capturing essential details.
    - Do not add unnecessary details, only the key information.
-   - Use numbered format (1, 2, 3, …).
 
 3. Action Items
    - List clear, concise, and actionable tasks derived from the discussion.
    - Use numbered format (1, 2, 3, …).
    - Each action should be written as a direct instruction.
-   - Make sure action items are practical and easy to follow.
 
 4. Sentiment Analysis
    - Identify the overall sentiment of the discussion: Positive, Neutral, or Negative.
    - Briefly explain WHY you selected that sentiment (1–2 lines).
-   - Keep explanation factual and objective, not opinionated.
+   - Keep explanation factual and objective.
 
 5. Proper Transcript
    - Provide the cleaned, readable version of the transcript.
@@ -142,10 +152,8 @@ Follow the structure below very strictly:
 Rules:
 - Response MUST always follow the above format with proper headings.
 - Never skip a section, even if content is missing.
-    The user may input text in any language. You must respond only in English, using the following structured format: Abstract Summary, Key Details, Action Items, Additional Notes. Do not skip any section.
 - Always keep the output well-formatted with headings and spacing.
 - Output should look neat and professional, similar to a business meeting summary.
-- Always respond in ENGLISH ONLY. Never use any other language under any circumstances.
 `;
 
     try {
@@ -161,7 +169,7 @@ Rules:
                         {
                             parts: [
                                 {
-                                    text: prompt + "\n\nConvertit according to given formate:\n" + promptText
+                                    text: prompt + "\n\nUse the above format and generate the full response in " + targetLanguage + ":\n" + promptText
                                 }
                             ],
                         },
@@ -361,7 +369,6 @@ function addBotResponse(content, timestamp = new Date()) {
         .replace(/={5,}/g, "")
         .replace(/\\/g, "")
         .replace(/```/g, "")
-        .replace(/^\s*\d+\.\s*Proper Transcript[\s\S]*$/gm, "")
         // Headings
         .replace(/^\s*(\d+)\.\s+(Abstract Summary|Key Points|Action Items|Sentiment Analysis)/gm, "<b class='bot-heading'>$1. $2</b><br>")
         // Markdown headings
